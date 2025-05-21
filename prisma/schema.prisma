@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Complaint {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  trackingId   String    @unique
+  title        String
+  description  String
+  category     String
+  location     String
+  name         String
+  email        String
+  phone        String?
+  agency       String
+  status       String    @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED, REJECTED
+  response     String?
+  responseDate DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now())
+
+  @@index([status])
+  @@index([category])
+  @@index([agency])
+  @@index([createdAt])
+}
