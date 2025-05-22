@@ -1,10 +1,11 @@
+/* eslint-disable prefer-const */
 "use client";
 
 import { useState, useEffect } from "react";
 import { Complaint } from "@prisma/client";
 import DashboardStats from "./DashboardStats";
-import ComplaintFilter from "./ComplaintFilter";
 import ComplaintList from "./ComplaintList";
+import ComplaintFilter from "./ComplaintFilter";
 
 interface FilterOptions {
   status: string;
@@ -93,7 +94,7 @@ const AdminDashboard: React.FC = () => {
     // Filter by date range
     if (filters.dateRange) {
       const now = new Date();
-      const startDate = new Date();
+      let startDate = new Date();
 
       switch (filters.dateRange) {
         case "today":

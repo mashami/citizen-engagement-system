@@ -29,3 +29,15 @@ model Complaint {
   @@index([agency])
   @@index([createdAt])
 }
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("USER") // USER, ADMIN
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@index([role])
+}

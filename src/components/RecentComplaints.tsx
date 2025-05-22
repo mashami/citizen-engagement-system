@@ -2,116 +2,128 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Complaint } from "@prisma/client";
 
-interface RecentComplaintsProps {
-  complaints: Complaint[];
+interface Complaint {
+  id: string;
+  title: string;
+  category: string;
+  status: string;
+  createdAt: string;
 }
 
-const RecentComplaints: React.FC<RecentComplaintsProps> = ({ complaints }) => {
-  const [mounted, setMounted] = useState<boolean>(false);
+const RecentComplaints: React.FC = () => {
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setMounted(true);
+    const fetchRecentComplaints = async (): Promise<void> => {
+      try {
+        const response = await fetch("/api/complaints/recent");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch recent complaints");
+        }
+
+        const data = await response.json();
+        setComplaints(data);
+      } catch (err) {
+        setError("Error loading recent complaints");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentComplaints();
   }, []);
 
-  if (!mounted) {
-    return <div className="animate-pulse h-40 bg-gray-200 rounded"></div>;
+  const getStatusColor = (status: string): string => {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "in progress":
+        return "bg-blue-100 text-blue-800";
+      case "resolved":
+        return "bg-green-100 text-green-800";
+      case "rejected":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold text-black mb-4">
+          Recent Complaints
+        </h2>
+        <div className="animate-pulse">
+          {[...Array(5)].map((_, index) => (
+            <div key={index} className="mb-3">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  if (complaints.length === 0) {
+  if (error) {
     return (
-      <div className="text-center py-6 bg-gray-50 rounded-lg">
-        <p className="text-gray-500">No complaints have been submitted yet.</p>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold text-black mb-4">
+          Recent Complaints
+        </h2>
+        <p className="text-red-500">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th
-              scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              ID
-            </th>
-            <th
-              scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Title
-            </th>
-            <th
-              scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Category
-            </th>
-            <th
-              scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Status
-            </th>
-            <th
-              scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Date
-            </th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-xl font-semibold text-black mb-4">
+        Recent Complaints
+      </h2>
+
+      {complaints.length === 0 ? (
+        <p className="text-gray-500">No complaints submitted yet.</p>
+      ) : (
+        <div className="space-y-4">
           {complaints.map((complaint) => (
-            <tr key={complaint.id}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                {complaint.trackingId}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                <Link
-                  href={`/complaints/${complaint.id}`}
-                  className="text-blue-600 hover:text-blue-900"
-                >
-                  {complaint.title}
-                </Link>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                {complaint.category}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span
-                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                  ${
-                    complaint.status === "PENDING"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : complaint.status === "IN_PROGRESS"
-                      ? "bg-blue-100 text-blue-800"
-                      : complaint.status === "RESOLVED"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {complaint.status.replace("_", " ")}
+            <div
+              key={complaint.id}
+              className="border-b border-gray-200 pb-3 last:border-0"
+            >
+              <h3 className="font-medium text-black">{complaint.title}</h3>
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-sm text-gray-600">
+                  {complaint.category}
                 </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                <span
+                  className={`text-xs px-2 py-1 rounded-full ${getStatusColor(
+                    complaint.status
+                  )}`}
+                >
+                  {complaint.status}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
                 {new Date(complaint.createdAt).toLocaleDateString()}
-              </td>
-            </tr>
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
-      <div className="mt-4 text-right">
-        <Link
-          href="/complaints"
-          className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-        >
-          View all complaints →
-        </Link>
-      </div>
+        </div>
+      )}
+
+      <Link
+        href="/track"
+        className="block text-blue-600 text-sm mt-4 hover:underline"
+      >
+        View all complaints →
+      </Link>
     </div>
   );
 };
